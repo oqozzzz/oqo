@@ -153,6 +153,7 @@ local function displayMode()
       end
     end
   else
+    redstoneOutput(redstoneOutputSide, 0)  -- 停用反应堆
     print("未检测到红石输入信号，不启用反应堆！")
   end
 end
@@ -185,6 +186,7 @@ local function silentMode()
       end
     end
   else
+    redstoneOutput(redstoneOutputSide, 0)  -- 停用反应堆
   end
 end
 
