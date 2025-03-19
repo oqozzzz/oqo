@@ -30,14 +30,14 @@ local config = {
     transferInterval = 0.1,            -- 物品转移间隔（秒）
     transferRetryInterval = 0.3,       -- 物品转移重试间隔（秒）
     maxTransferRetries = 3,            -- 最大转移重试次数
-    safetyDelay = 0.8,                 -- 安全操作延迟（秒）
-    normalDelay = 1                    -- 常态操作延迟（秒）
+    safetyDelay = 1.5,                 -- 安全操作延迟（秒）
+    mainDelay = 1.0,                   -- 主循环间隔（秒）
+    normalDelay = 0.1                  -- 一般保留延迟（秒）
   }
 }
 
 local reactor = {
-  isActive = false,
-  lastCheckTime = 0
+  isActive = false
 }
 
 -- 红石控制封装
@@ -161,7 +161,7 @@ local function displayMode()
 
   if not status.energyOK then
     reactor:setState(false)
-    sleep(5)  -- 节能模式等待
+    sleep(5)  -- 增加检测间隔
     goto continue
   end
 
@@ -179,15 +179,17 @@ local function displayMode()
     sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
     print("开始处理异常物品...")
     if ItemHandling(status) then
+      sleep(config.timing.normalDelay)
       print("反应堆一切正常，激活反应堆...")
       reactor:setState(true)
     end
   else
+    sleep(config.timing.normalDelay)
     reactor:setState(true)
   end
 
   ::continue::
-  sleep(config.timing.normalDelay)  -- 主循环间隔（秒）
+  sleep(config.timing.mainDelay)  -- 主循环间隔（秒）
 end
 
 -- 函数：静默模式
@@ -196,7 +198,7 @@ local function silentMode()
 
   if not status.energyOK then
     reactor:setState(false)
-    sleep(5)  -- 节能模式等待
+    sleep(5)  -- 增加检测间隔
     goto continue
   end
 
@@ -206,14 +208,16 @@ local function silentMode()
     reactor:setState(false)
     sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
     if ItemHandling(status) then
+      sleep(config.timing.normalDelay)
       reactor:setState(true)
     end
   else
+    sleep(config.timing.normalDelay)
     reactor:setState(true)
   end
 
   ::continue::
-  sleep(config.timing.normalDelay) -- 主循环间隔（秒）
+  sleep(config.timing.mainDelay) -- 主循环间隔（秒）
 end
 
 -- 函数：配置模式
@@ -240,12 +244,12 @@ local function main()
     elseif playerInput == "1" then
       while checkMode() do
         displayMode()
-        sleep(0.1)
+        sleep(config.timing.normalDelay)
       end
     elseif playerInput == "2" then
       while checkMode() do
         silentMode()
-        sleep(0.1)
+        sleep(config.timing.normalDelay)
       end
     else
       print("程序退出！")
