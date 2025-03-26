@@ -1,6 +1,7 @@
 local component = require("component")
 local computer = require("computer")
 local filesystem = require("filesystem")
+local os = require("os")
 local io = require("io")
 local redstone = component.proxy(component.list("redstone")())
 local transposer = component.proxy(component.list("transposer")())
@@ -27,12 +28,12 @@ local config = {
     activationThreshold = 8            -- 红石激活阈值
   },
   timing = {
-    transferInterval = 0.1,            -- 物品转移间隔（秒）
-    transferRetryInterval = 0.3,       -- 物品转移重试间隔（秒）
-    maxTransferRetries = 3,            -- 最大转移重试次数
-    safetyDelay = 1.5,                 -- 安全操作延迟（秒）
-    mainDelay = 1.0,                   -- 主循环间隔（秒）
-    normalDelay = 0.1                  -- 一般保留延迟（秒）
+    transferInterval = 0.2,            -- 物品转移间隔（秒）
+    transferRetryInterval = 0.2,       -- 物品转移重试间隔（秒）
+    maxTransferRetries = 2,            -- 最大转移重试次数
+    safetyDelay = 1.6,                 -- 安全操作延迟（秒）
+    mainDelay = 0.8,                   -- 主循环间隔（秒）
+    normalDelay = 0.2                  -- 一般保留延迟（秒）
   }
 }
 
@@ -40,19 +41,11 @@ local reactor = {
   isActive = false
 }
 
+
 -- 红石控制封装
 function reactor:setState(active)
   redstone.setOutput(config.redstone.reactorControl, active and 15 or 0)
   self.isActive = active
-end
-
--- 函数：睡眠
-local function sleep(time)
-  local awa = 0
-  while awa <= time do
-    awa = awa + time
-    computer.pullSignal(time)
-  end
 end
 
 -- 函数：触发报警（实际报警功能待实现）
@@ -126,7 +119,7 @@ local function transferItems(fromSide, toSide, fromSlot, toSlot, maxRetries)
       return true
     end
     retries = retries + 1
-    sleep(config.timing.transferRetryInterval) -- 重试等待（秒）
+    os.sleep(config.timing.transferRetryInterval) -- 重试等待（秒）
   end
   return false
 end
@@ -161,7 +154,7 @@ local function displayMode()
 
   if not status.energyOK then
     reactor:setState(false)
-    sleep(5)  -- 增加检测间隔
+    os.sleep(5)  -- 增加检测间隔
     goto continue
   end
 
@@ -176,20 +169,20 @@ local function displayMode()
     if #status.coolant > 0 then
       print("缺少冷却单元或冷却单元损耗超过阈值的槽位：" .. table.concat(status.coolant, ", "))
     end
-    sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
+    os.sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
     print("开始处理异常物品...")
     if ItemHandling(status) then
-      sleep(config.timing.normalDelay)
+      os.sleep(config.timing.normalDelay)
       print("反应堆一切正常，激活反应堆...")
       reactor:setState(true)
     end
   else
-    sleep(config.timing.normalDelay)
+    os.sleep(config.timing.normalDelay)
     reactor:setState(true)
   end
 
   ::continue::
-  sleep(config.timing.mainDelay)  -- 主循环间隔（秒）
+  os.sleep(config.timing.mainDelay)  -- 主循环间隔（秒）
 end
 
 -- 函数：静默模式
@@ -198,7 +191,7 @@ local function silentMode()
 
   if not status.energyOK then
     reactor:setState(false)
-    sleep(5)  -- 增加检测间隔
+    os.sleep(5)  -- 增加检测间隔
     goto continue
   end
 
@@ -206,18 +199,18 @@ local function silentMode()
     triggerAlarm("温度异常")
   elseif #status.fuel > 0 or #status.coolant > 0 then
     reactor:setState(false)
-    sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
+    os.sleep(config.timing.safetyDelay)  -- 安全操作延迟（秒）
     if ItemHandling(status) then
-      sleep(config.timing.normalDelay)
+      os.sleep(config.timing.normalDelay)
       reactor:setState(true)
     end
   else
-    sleep(config.timing.normalDelay)
+    os.sleep(config.timing.normalDelay)
     reactor:setState(true)
   end
 
   ::continue::
-  sleep(config.timing.mainDelay) -- 主循环间隔（秒）
+  os.sleep(config.timing.mainDelay) -- 主循环间隔（秒）
 end
 
 -- 函数：配置模式
@@ -244,12 +237,12 @@ local function main()
     elseif playerInput == "1" then
       while checkMode() do
         displayMode()
-        sleep(config.timing.normalDelay)
+        os.sleep(config.timing.normalDelay)
       end
     elseif playerInput == "2" then
       while checkMode() do
         silentMode()
-        sleep(config.timing.normalDelay)
+        os.sleep(config.timing.normalDelay)
       end
     else
       print("程序退出！")
