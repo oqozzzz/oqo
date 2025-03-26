@@ -41,7 +41,6 @@ local reactor = {
   isActive = false
 }
 
-
 -- 红石控制封装
 function reactor:setState(active)
   redstone.setOutput(config.redstone.reactorControl, active and 15 or 0)
